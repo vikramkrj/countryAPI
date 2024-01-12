@@ -59,7 +59,6 @@ app.post('/auth', bodyParser.json(), (req, res) => {
 
 // API endpoint to fetch detailed information about a specific country by name
 app.get('/country/:name', tokenRequired, async (req, res) => {
-//	app.get('/country/:name', async (req, res) => {
   const countryName = req.params.name;
 
   try {
@@ -72,21 +71,57 @@ app.get('/country/:name', tokenRequired, async (req, res) => {
 
 // API endpoint to retrieve a list of countries based on filters and sorting
 //app.get('/countries', tokenRequired, async (req, res) => {
-	app.get('/countries', async (req, res) => {
-  const { population, area, language, sort, page, limit } = req.query;
+app.get('/countries', async (req, res) => {
+  const { population, area, language, sort = 'asc', page = 1, limit = 10 } = req.query;
+
+  // Build query parameters
   const queryParams = new URLSearchParams({
     population,
     area,
     language,
-    sort,
-    page,
-    limit,
   });
 
   try {
-    const response = await axios.get(`https://restcountries.com/v3.1/all?${queryParams}`);
-	//https://restcountries.com/v3.1/independent?status=true
-    res.json(response.data);
+    // Make a request to the correct REST Countries API endpoint to get all countries
+    const response = await axios.get(`https://restcountries.com/v2/all?${queryParams}`);
+
+    // Extract country details from the response
+    const countries = response.data.map(country => ({
+      name: country.name,
+      population: country.population,
+      area: country.area,
+      languages: country.languages.map(lang => lang.name),
+    }));
+
+    // Filter countries based on query parameters
+    const filteredCountries = countries.filter(country => {
+      return (
+        (!population || country.population === +population) &&
+        (!area || country.area === +area) &&
+        (!language || country.languages.includes(language))
+      );
+    });
+
+    // Sort countries based on the specified criteria
+    const sortedCountries = filteredCountries.sort((a, b) => {
+      const valueA = a[sort] || 0;
+      const valueB = b[sort] || 0;
+      return sort === 'asc' ? valueA - valueB : valueB - valueA;
+    });
+
+  // Implement pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedCountries = sortedCountries.slice(startIndex, endIndex);
+
+    const totalCountries = sortedCountries.length;
+    const totalPages = Math.ceil(totalCountries / limit);
+
+    res.json({
+      totalPages,
+      currentPage: page,
+      countries: paginatedCountries,
+    });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch countries!' });
   }
