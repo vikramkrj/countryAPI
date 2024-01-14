@@ -34,10 +34,12 @@ const tokenRequired = (req, res, next) => {
 // Function to generate JWT token
 const generateToken = (username, password) => {
   // In a real-world scenario, use a library like jsonwebtoken for secure token generation
+  try{
   if (username === USERNAME && password === PASSWORD) {
     return jwt.sign({ username, password }, SECRET_KEY, { expiresIn: '1h' });
   } else {
     throw new Error('Invalid credentials!');
+  }
   }
   catch (error) {
     throw new Error('Token generation failed: ' + error.message);
