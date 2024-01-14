@@ -39,6 +39,9 @@ const generateToken = (username, password) => {
   } else {
     throw new Error('Invalid credentials!');
   }
+  catch (error) {
+    throw new Error('Token generation failed: ' + error.message);
+  }
 };
 
 // API endpoint for authentication
@@ -53,7 +56,7 @@ app.post('/auth', bodyParser.json(), (req, res) => {
       res.status(401).json({ error: 'Invalid credentials!' });
     }
   } catch (error) {
-    res.status(401).json({ error: 'Invalid credentials!' });
+    res.status(401).json({ error: 'Authentication failed: ' + error.message });
   }
 });
 
@@ -70,9 +73,8 @@ app.get('/country/:name', tokenRequired, async (req, res) => {
 });
 
 // API endpoint to retrieve a list of countries based on filters and sorting
-//app.get('/countries', tokenRequired, async (req, res) => {
-app.get('/countries', async (req, res) => {
-  const { population, area, language, sort = 'asc', page = 1, limit = 10 } = req.query;
+app.get('/countries', tokenRequired, async (req, res) => {
+  const { population, area, language, sort = 'asc', page = 1, limit = 10 } = req.query;a
 
   // Build query parameters
   const queryParams = new URLSearchParams({
@@ -117,13 +119,22 @@ app.get('/countries', async (req, res) => {
     const totalCountries = sortedCountries.length;
     const totalPages = Math.ceil(totalCountries / limit);
 
+	// If no record foudn for search value
+	if (paginatedCountries.length === 0) {
+      return res.status(404).json({ error: 'No countries found with the given criteria!' });
+    }
+	
     res.json({
       totalPages,
       currentPage: page,
       countries: paginatedCountries,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch countries!' });
+    if (error.response && error.response.status) {
+      res.status(error.response.status).json({ error: 'Failed to fetch countries: ' + error.message });
+    } else {
+      res.status(500).json({ error: 'Internal Server Error: ' + error.message });
+    }
   }
 });
 
