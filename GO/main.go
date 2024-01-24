@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/your-username/your-repo/auth"
-	"github.com/your-username/your-repo/countries"
+	"github.com/vikramkrj/countryAPI/tree/main/GO/auth"
+	"github.com/vikramkrj/countryAPI/tree/main/GO/countries"
 	"github.com/gorilla/mux"
 )
 
