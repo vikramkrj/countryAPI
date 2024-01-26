@@ -1,109 +1,90 @@
-# Go REST API with JWT Authentication and Country Information
 
-This Go project is a simple implementation of a RESTful API that includes JWT authentication and functionality to retrieve information about countries. The code is organized into separate packages for better modularity and maintainability.
+# Country API Service
 
-## Features
+This backend API service provides useful data about countries using the REST Countries API (https://restcountries.com).
 
-1. **JWT Authentication:**
-   - User authentication using JSON Web Tokens (JWT).
-   - Middleware for token validation on secure endpoints.
+## Requirements
 
-2. **Country Information:**
-   - Endpoint to fetch detailed information about a specific country by name.
-   - Endpoint to retrieve a list of countries based on filters and sorting.
+- Go (Golang)
+- [Gin](https://github.com/gin-gonic/gin)
+- [JWT-Go](https://github.com/dgrijalva/jwt-go)
+- [Resty](https://github.com/go-resty/resty/v2)
 
-## Project Structure
-
-The project is organized into the following packages:
-
-1. **main:**
-   - Contains the main server code.
-   - Imports and utilizes functionality from other packages.
-
-2. **auth:**
-   - Handles user authentication and JWT token generation.
-   - Defines the `Claims` struct for JWT claims.
-   - Implements middleware for token validation.
-
-3. **countries:**
-   - Contains functionality related to country information.
-   - Defines the `CountryInfo` struct for country details.
-   - Implements functions to fetch country information and retrieve a list of countries.
-
-## Dependencies
-
-- [github.com/gorilla/mux](https://github.com/gorilla/mux): A powerful URL router and dispatcher for Go.
-- [github.com/dgrijalva/jwt-go](https://github.com/dgrijalva/jwt-go): JSON Web Token implementation for Go.
-
-## Installation
+## Setup
 
 1. Clone the repository:
 
-   ```bash
-   git clone https://github.com/your-username/your-repo.git
-
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/your-username/your-repo.git
-
+```bash
+git clone <repository-url>
+cd <repository-directory>
 Install dependencies:
-
-	''bash
-	go get -u github.com/gorilla/mux
-	go get -u github.com/dgrijalva/jwt-go
-
+bash
+go mod tidy
 Run the application:
-
-	go run main.go
-
-The server will start on http://localhost:3000.
+bash
+go run main.go
+The server will start running at http://localhost:8080.
 
 API Endpoints
-1. Authentication
+1. Auth Endpoint
+Generate a valid auth token based on user credentials (username/password).
+
+Endpoint:
+
+bash
+
 POST /auth
-Authenticate the user and obtain a JWT token.
+Payload:
 
-Request Body:
-
+json
 {
   "username": "your_username",
   "password": "your_password"
 }
+2. Country Details Endpoint
+Fetch detailed information about a specific country by providing its name as a parameter.
 
-Response:
+Endpoint:
 
-{
-  "storedToken": "your_generated_token"
-}
+bash
+GET /country/:name
+3. Countries Endpoint
+Retrieve a list of all countries' names based on filters (population/area/language) and sorting (asc/desc). Support for pagination.
 
-2. Fetch Country Information
-GET /country/{name}
-Fetch detailed information about a specific country by name.
+Endpoint:
 
-3. Retrieve List of Countries
+bash
 GET /countries
-Retrieve a list of countries based on filters and sorting.
-
 Query Parameters:
 
 population
 area
 language
-sort (optional, default is 'asc')
-page (optional, default is 1)
-limit (optional, default is 10)
-Response:
+sort (asc/desc)
+page
+limit
+API Authorization
+All the above API endpoints are protected by authentication. Include the generated token in the Authorization header with the Bearer prefix.
 
-{
-  "totalPages": 1,
-  "currentPage": 1,
-  "countries": []
-}
+Testing APIs
+You can use curl commands to test the APIs from the command line. Below are some examples:
 
-License
-This project is licensed under the Prashnat Advait License.
+1. Auth Endpoint
+bash
+curl -X POST -H "Content-Type: application/json" -d '{"username":"your_username","password":"your_password"}' http://localhost:8080/auth
+2. Country Details Endpoint
+bash
+curl -H "Authorization: Bearer <your_generated_token>" http://localhost:8080/country/:name
+3. Countries Endpoint
+bash
+curl -H "Authorization: Bearer <your_generated_token>" http://localhost:8080/countries?population=1000000&sort=desc&page=1&limit=10
+Ensure to replace placeholders like your_username, your_password, <your_generated_token>, etc., with actual values.
+
+Additional Information
+For error handling and informative error messages, refer to the API responses.
+Ensure to inspect the actual token being sent and received to ensure it matches the expected JWT format.
+vbnet
+
+Customize this `README.md` according to your project structure and requirements. If you have additional information or specific instructions, feel free to include them in the documentation.
 
 
-Replace `https://github.com/your-username/your-repo.git` with the actual URL
