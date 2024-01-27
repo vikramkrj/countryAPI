@@ -136,8 +136,8 @@ func countryHandler(c *gin.Context) {
 
 // parseFilterParameters extracts and parses filter parameters from the request query.
 func parseFilterParameters(c *gin.Context) (int, int, string, string, string, int, int) {
-	populationStr := c.Query("population")
-	areaStr := c.Query("area")
+	populationStr := c.DefaultQuery("population","")
+	areaStr := c.DefaultQuery("area","")
 
 	var populationFilter, areaFilter int
 	var err error
@@ -160,12 +160,12 @@ func parseFilterParameters(c *gin.Context) (int, int, string, string, string, in
 		}
 	}
 
-	languageFilter := c.Query("language")
+	languageFilter := c.DefaultQuery("language","")
 	if languageFilter == "" {
 		fmt.Println("Language filter is empty. No language filter will be applied.")
 	}
 
-	sortBy := c.Query("sort")
+	sortBy := c.DefaultQuery("sort","")
 	sortOrder := c.DefaultQuery("order", "asc") // Default to ascending order
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil {
@@ -186,11 +186,15 @@ func parseFilterParameters(c *gin.Context) (int, int, string, string, string, in
 
 // countriesHandler handles the countries endpoint.
 func countriesHandler(c *gin.Context) {
+
+	// Print entire request URL for debugging
+	fmt.Println("Request URL:", c.Request.URL.String())
+
 	// Retrieve filter parameters from the request query
 	populationFilter, areaFilter, languageFilter, sortBy, sortOrder, page, pageSize := parseFilterParameters(c)
 
 	// Print filter parameters for debugging
-	fmt.Printf("Filter Parameters:\nPopulation: %d\nArea: %d\nLanguage: %s\nSortBy: %s\nSortOrder: %s\nPage: %d\nPageSize: %d\n",
+	fmt.Println("Filter Parameters:\nPopulation: %d\nArea: %d\nLanguage: %s\nSortBy: %s\nSortOrder: %s\nPage: %d\nPageSize: %d\n",
 		populationFilter, areaFilter, languageFilter, sortBy, sortOrder, page, pageSize)
 
 	// Retrieve a list of countries based on filters, sorting, and pagination
@@ -255,77 +259,145 @@ func getAllCountries(populationFilter int, areaFilter int, languageFilter string
 		return nil, err
 	}
 
-	// Apply filters
-	var filteredCountries []map[string]interface{}
-	for _, country := range allCountries {
-		// Apply population filter
-		population, popFound := country["population"].(float64)
-		if popFound && populationFilter > 0 && population <= float64(populationFilter) {
-			continue
-		}
-
-		// Apply area filter
-		area, areaFound := country["area"].(float64)
-		if areaFound && areaFilter > 0 && area <= float64(areaFilter) {
-			continue
-		}
-
-		// Apply language filter
-if languageFilter != "" {
-    languages, langFound := country["languages"].([]interface{})
-    if langFound {
-        fmt.Printf("Languages for country %s: %v\n", country["name"], languages)
-
-        languageFound := false
-        for _, lang := range languages {
-            if lang.(string) == languageFilter {
-                languageFound = true
-                break
-            }
-        }
-        if !languageFound {
-            fmt.Printf("Skipped country %s due to language filter: %v\n", country["name"], country)
-            continue
-        }
-    } else {
-        fmt.Printf("No languages field found for country: %v\n", country)
+// Apply filters
+var filteredCountries []map[string]interface{}
+for _, country := range allCountries {
+    // Apply population filter
+if populationFilter > 0 {
+   population, popFound := country["population"].(float64)
+    if !popFound {
+  //      fmt.Printf("No population field found for country: %v\n", country["name"])
+        continue
     }
+
+    if populationFilter > 0 && population > float64(populationFilter) {
+   //     fmt.Printf("Skipped country %s due to population filter: %v\n", country["name"], country)
+        continue
+    }
+}
+ 
+
+    // Apply area filter
+if areaFilter > 0  {
+  // Apply area filter
+area, areaFound := country["area"].(float64)
+if !areaFound {
+    fmt.Printf("No area field found for country: %v\n", country["name"])
+    continue
+}
+
+if areaFilter > 0 && area > float64(areaFilter) {
+    fmt.Printf("Skipped country %s due to area filter: %v\n", country["name"], country)
+    continue
+}
+
+}
+
+    // Apply language filter
+if languageFilter != "" {
+    languagesMap, langFound := country["languages"].(map[string]interface{})
+    if !langFound {
+        fmt.Printf("No languages field found for country: %v\n", country["name"])
+        continue
+    }
+
+    languageFound := false
+    for langCode, langName := range languagesMap {
+        // Check if the language code and name match the filter
+        if langCode == languageFilter || langName == languageFilter {
+            languageFound = true
+            break
+        }
+    }
+
+    if !languageFound {
+        fmt.Printf("Skipped country %s due to language filter: \n", country["name"])
+        continue
+    }
+	if languageFound {
+	fmt.Println("Country found %s :", country["name"])
+	}
+}
+    // If all filters pass, add the country to the filtered list
+    filteredCountries = append(filteredCountries, country)
 }
 
 
-		// If all filters pass, add the country to the filtered list
-		filteredCountries = append(filteredCountries, country)
-	}
-
-	// Apply sorting
+// Apply sorting
 sort.SliceStable(filteredCountries, func(i, j int) bool {
-    valueI, okI := filteredCountries[i][sortBy].(string)
-    valueJ, okJ := filteredCountries[j][sortBy].(string)
+    // Ensure the fields exist
+    fieldI, fieldJ := filteredCountries[i][sortBy], filteredCountries[j][sortBy]
 
-    if !okI || !okJ {
-      //  fmt.Printf("Error accessing sorting fields for countries:\n")
-       // fmt.Printf("Country %s: %v, Field %s: %v\n", filteredCountries[i]["name"], filteredCountries[i], sortBy, filteredCountries[i][sortBy])
-        //fmt.Printf("Country %s: %v, Field %s: %v\n", filteredCountries[j]["name"], filteredCountries[j], sortBy, filteredCountries[j][sortBy])
+    // Print debug information
+    fmt.Printf("Sorting fields for countries:\n")
+    fmt.Printf("Country %s: %v, Field %s: %v\n", filteredCountries[i]["name"], filteredCountries[i], sortBy, fieldI)
+    fmt.Printf("Country %s: %v, Field %s: %v\n", filteredCountries[j]["name"], filteredCountries[j], sortBy, fieldJ)
+
+    // Handle different types
+    switch fieldI := fieldI.(type) {
+    case string:
+        switch fieldJ := fieldJ.(type) {
+        case string:
+            // Compare string values
+            if sortOrder == "asc" {
+                return fieldI < fieldJ
+            } else {
+                return fieldI > fieldJ
+            }
+        default:
+            return false
+        }
+    case int, float64:
+        // Handle numeric types
+        valueI, okI := convertToFloat(fieldI)
+        valueJ, okJ := convertToFloat(fieldJ)
+
+        if !okI || !okJ {
+            fmt.Printf("Error converting numeric fields for countries:\n")
+            return false
+        }
+
+        if sortOrder == "asc" {
+            return valueI < valueJ
+        } else {
+            return valueI > valueJ
+        }
+    default:
+        // Unsupported type, consider handling other types as needed
         return false
-    }
-
-    if sortOrder == "asc" {
-        return valueI < valueJ
-    } else {
-        return valueI > valueJ
     }
 })
 
 
 	// Apply pagination
-	startIndex := (page - 1) * pageSize
-	endIndex := startIndex + pageSize
-	if endIndex > len(filteredCountries) {
-		endIndex = len(filteredCountries)
-	}
+startIndex := (page - 1) * pageSize
+endIndex := startIndex + pageSize
+
+if startIndex >= len(filteredCountries) {
+    // If startIndex is beyond the length of the filteredCountries, set both indices to len(filteredCountries)
+    startIndex = len(filteredCountries)
+    endIndex = len(filteredCountries)
+} else if endIndex > len(filteredCountries) {
+    // If endIndex is beyond the length of the filteredCountries, set it to len(filteredCountries)
+    endIndex = len(filteredCountries)
+}
+
 
 	//fmt.Printf("Filtered Countries: %v\n", filteredCountries)
-
+fmt.Println("start index", startIndex)
+fmt.Println("EndIndex", endIndex)
 	return filteredCountries[startIndex:endIndex], nil
 }
 
+
+// Function to convert interface{} to float64
+func convertToFloat(value interface{}) (float64, bool) {
+    switch v := value.(type) {
+    case int:
+        return float64(v), true
+    case float64:
+        return v, true
+    default:
+        return 0, false
+    }
+}
