@@ -188,13 +188,13 @@ func parseFilterParameters(c *gin.Context) (int, int, string, string, string, in
 func countriesHandler(c *gin.Context) {
 
 	// Print entire request URL for debugging
-	fmt.Println("Request URL:", c.Request.URL.String())
+	//fmt.Println("Request URL:", c.Request.URL.String())
 
 	// Retrieve filter parameters from the request query
 	populationFilter, areaFilter, languageFilter, sortBy, sortOrder, page, pageSize := parseFilterParameters(c)
 
 	// Print filter parameters for debugging
-	fmt.Println("Filter Parameters:\nPopulation: %d\nArea: %d\nLanguage: %s\nSortBy: %s\nSortOrder: %s\nPage: %d\nPageSize: %d\n",
+	//fmt.Println("Filter Parameters:\nPopulation: %d\nArea: %d\nLanguage: %s\nSortBy: %s\nSortOrder: %s\nPage: %d\nPageSize: %d\n",
 		populationFilter, areaFilter, languageFilter, sortBy, sortOrder, page, pageSize)
 
 	// Retrieve a list of countries based on filters, sorting, and pagination
@@ -224,7 +224,7 @@ func getCountryInfo(countryName string) ([]map[string]interface{}, error) {
 	body := resp.Body()
 
 	// Print the raw response body for debugging
-	fmt.Println("Raw response body:", string(body))
+	//fmt.Println("Raw response body:", string(body))
 
 	// Unmarshal the response body into a map
 	var countryInfo []map[string]interface{}
@@ -235,7 +235,7 @@ func getCountryInfo(countryName string) ([]map[string]interface{}, error) {
 
 
 	// Print the country information for debugging
-	fmt.Println("Country Information:", countryInfo)
+	//fmt.Println("Country Information:", countryInfo)
 	return countryInfo, nil
 }
 
@@ -314,9 +314,6 @@ if languageFilter != "" {
         fmt.Printf("Skipped country %s due to language filter: \n", country["name"])
         continue
     }
-	if languageFound {
-	fmt.Println("Country found %s :", country["name"])
-	}
 }
     // If all filters pass, add the country to the filtered list
     filteredCountries = append(filteredCountries, country)
@@ -384,8 +381,6 @@ if startIndex >= len(filteredCountries) {
 
 
 	//fmt.Printf("Filtered Countries: %v\n", filteredCountries)
-fmt.Println("start index", startIndex)
-fmt.Println("EndIndex", endIndex)
 	return filteredCountries[startIndex:endIndex], nil
 }
 
